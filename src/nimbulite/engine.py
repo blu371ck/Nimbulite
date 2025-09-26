@@ -2,7 +2,7 @@ import logging
 
 import boto3
 
-from . import actions
+from .actions.ec2 import EC2Actions
 
 logger = logging.getLogger(__name__)
 
@@ -26,16 +26,17 @@ class Engine:
         self._config = config
 
         self._session = boto3.Session()
+        self._ec2_actions = EC2Actions()
 
         self._action_dispatcher = {
-            "TagInstance": actions.tag_instance,
-            "IsolateInstance": actions.isolate_instance,
-            "RevokeIamCredentials": actions.revoke_iam_credentials,
-            "CreateSnapshots": actions.create_snapshots,
-            "ObtainInstanceMetadata": actions.obtain_instance_metadata,
-            "SendNotification": actions.send_notification,
-            "RunGuardDutyMalwareScan": actions.run_guardduty_malware_scan,
-            "TerminateAndReplaceInstance": actions.terminate_and_replace_instance,
+            "TagInstance": self._ec2_actions.tag_instance,
+            "IsolateInstance": self._ec2_actions.isolate_instance,
+            "RevokeIamCredentials": self._ec2_actions.revoke_iam_credentials,
+            "CreateSnapshots": self._ec2_actions.create_snapshots,
+            "ObtainInstanceMetadata": self._ec2_actions.obtain_instance_metadata,
+            "SendNotification": self._ec2_actions.send_notification,
+            "RunGuardDutyMalwareScan": self._ec2_actions.run_guardduty_malware_scan,
+            "TerminateAndReplaceInstance": self._ec2_actions.terminate_and_replace_instance,
         }
         logger.info("Nimbulite Engine initialized successfully.")
 
@@ -105,10 +106,12 @@ class Engine:
                 action_name = step.get("action")
                 action_func = self._action_dispatcher.get(action_name)
 
+                params = step.get("with", {})
+
                 if action_func:
                     try:
                         # Execute the action and check its return status
-                        success = action_func(self._session, finding_event)
+                        success = action_func(self._session, finding_event, params)
                         if success:
                             actions_executed += 1
                         else:

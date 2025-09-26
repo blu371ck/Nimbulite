@@ -1,3 +1,7 @@
+config_variables:
+  # Security Group ID to use when isolating instances with IsolateInstance action
+  isolation_sg_id: &default_isolation_sg "sg-012345abcdef67890"
+
 findings_to_playbook_map:
   ec2:
     - finding: Backdoor:EC2/C&CActivity.B 
@@ -177,6 +181,8 @@ playbooks:
         enabled: true
       - action: IsolateInstance
         enabled: true
+        with:
+          isolation_security_group_id: *default_isolation_sg
       - action: RevokeIamCredentials
         enabled: false
       - action: CreateSnapshots
@@ -224,6 +230,8 @@ playbooks:
         enabled: true
       - action: IsolateInstance
         enabled: false
+        with:
+          isolation_security_group_id: *default_isolation_sg
       - action: CreateSnapshots
         enabled: true
       - action: SendNotification
