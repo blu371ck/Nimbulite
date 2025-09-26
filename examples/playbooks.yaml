@@ -1,0 +1,241 @@
+findings_to_playbook_map:
+  ec2:
+    - finding: Backdoor:EC2/C&CActivity.B 
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Backdoor:EC2/C&CActivity.B!DNS
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Backdoor:EC2/DenialOfService.Dns
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Backdoor:EC2/DenialOfService.Tcp
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Backdoor:EC2/DenialOfService.Udp
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Backdoor:EC2/DenialOfService.UdpOnTcpPorts
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Backdoor:EC2/DenialOfService.UnusualProtocol
+      playbook: InstanceCompromise
+      enabled: true
+  
+    - finding: Backdoor:EC2/Spambot
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Backdoor:EC2/NetworkPortUnusual
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Backdoor:EC2/TrafficVolumeUnusual
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: CryptoCurrency:EC2/BitcoinTool.B
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: CryptoCurrency:EC2/BitcoinTool.B!DNS
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: DefenseEvasion:EC2/UnusualDNSResolver
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: DefenseEvasion:EC2/UnusualDoHActivity
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: DefenseEvasion:EC2/UnusualDoTActivity
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Impact:EC2/AbusedDomainRequest.Reputation
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Impact:EC2/BitcoinDomainRequest.Reputation
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Impact:EC2/MaliciousDomainRequest.Reputation
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Impact:EC2/MaliciousDomainRequest.Custom
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Impact:EC2/PortSweep
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Impact:EC2/SuspiciousDomainRequest.Reputation
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Impact:EC2/WinRMBruteForce
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Recon:EC2/PortProbeEMRUnprotectedPort
+      playbook: UnprotectedEMRPort
+      enabled: true
+
+    - finding: Recon:EC2/PortProbeUnprotectedPort
+      playbook: UnprotectedPortProbe
+      enabled: true
+
+    - finding: Recon:EC2/Portscan
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Trojan:EC2/BlackholeTraffic
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Trojan:EC2/BlackholeTraffic!DNS
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Trojan:EC2/DGADomainRequest.B
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Trojan:EC2/DGADomainRequest.C!DNS
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Trojan:EC2/DNSDataExfiltration
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Trojan:EC2/DriveBySourceTraffic!DNS
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Trojan:EC2/DropPoint
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Trojan:EC2/DropPoint!DNS
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: Trojan:EC2/PhishingDomainRequest!DNS
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: UnauthorizedAccess:EC2/MaliciousIPCaller.Custom
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: UnauthorizedAccess:EC2/MetadataDNSRebind
+      playbook: CredentialExfiltrationDnsRebind
+      enabled: true
+
+    - finding: UnauthorizedAccess:EC2/RDPBruteForce
+      enabled: true
+      conditional_on: resource_role
+      conditions:
+        - if: ACTOR
+          then: InstanceCompromise
+        - if: TARGET
+          then: InboundBruteForce
+
+    - finding: UnauthorizedAccess:EC2/SSHBruteForce
+      enabled: true
+      conditional_on: resource_role
+      conditions:
+        - if: ACTOR
+          then: InstanceCompromise
+        - if: TARGET
+          then: InboundBruteForce
+
+    - finding: UnauthorizedAccess:EC2/TorClient
+      playbook: InstanceCompromise
+      enabled: true
+
+    - finding: UnauthorizedAccess:EC2/TorRelay
+      playbook: InstanceCompromise
+      enabled: true
+
+playbooks:
+  - name: InstanceCompromise
+    steps:
+      - action: TagInstance
+        enabled: true
+      - action: IsolateInstance
+        enabled: true
+      - action: RevokeIamCredentials
+        enabled: false
+      - action: CreateSnapshots
+        enabled: true
+      - action: ObtainInstanceMetadata
+        enabled: true
+      - action: SendNotification
+        enabled: true
+      - action: RunGuardDutyMalwareScan
+        enabled: false
+      - action: TerminateAndReplaceInstance
+        enabled: false
+
+  - name: UnprotectedEMRPort
+    steps:
+      - action: TagInstance
+        enabled: true
+      - action: ObtainInstanceMetadata
+        enabled: true
+      - action: BlockMaliciousIP
+        enabled: true
+      - action: RemediateSecurityGroup
+        enabled: true
+      - action: SendNotification
+        enabled: true
+
+  - name: UnprotectedPortProbe
+    steps:
+      - action: TagInstance
+        enabled: true
+      - action: ObtainInstanceMetadata
+        enabled: true
+      - action: BlockMaliciousIP
+        enabled: true
+      - action: SendNotification
+        enabled: true
+      - action: RemovePublicAccessRule
+        enabled: false
+
+  - name: CredentialExfiltrationDnsRebind
+    steps:
+      - action: TagInstance
+        enabled: true
+      - action: RevokeIamSessions
+        enabled: true
+      - action: IsolateInstance
+        enabled: false
+      - action: CreateSnapshots
+        enabled: true
+      - action: SendNotification
+        enabled: true
+
+  - name: InboundBruteForce
+    steps:
+      - action: TagInstance
+        enabled: true
+      - action: ObtainInstanceMetadata
+        enabled: true
+      - action: BlockMaliciousIP
+        enabled: true
+      - action: SendNotification
+        enabled: true
