@@ -178,12 +178,12 @@ playbooks:
   - name: InstanceCompromise
     steps:
       - action: TagInstance
-        enabled: true
+        enabled: false
       - action: IsolateInstance
-        enabled: true
+        enabled: false
         with:
           isolation_security_group_id: *default_isolation_sg
-      - action: RevokeIamCredentials
+      - action: InvalidateIamRoleCredentials
         enabled: false
       - action: CreateSnapshots
         enabled: true
@@ -226,7 +226,7 @@ playbooks:
     steps:
       - action: TagInstance
         enabled: true
-      - action: RevokeIamSessions
+      - action: InvalidateIamRoleCredentials
         enabled: true
       - action: IsolateInstance
         enabled: false

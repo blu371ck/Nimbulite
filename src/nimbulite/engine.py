@@ -31,7 +31,7 @@ class Engine:
         self._action_dispatcher = {
             "TagInstance": self._ec2_actions.tag_instance,
             "IsolateInstance": self._ec2_actions.isolate_instance,
-            "RevokeIamCredentials": self._ec2_actions.revoke_iam_credentials,
+            "InvalidateIamRoleCredentials": self._ec2_actions.invalidate_iam_role_credentials,
             "CreateSnapshots": self._ec2_actions.create_snapshots,
             "ObtainInstanceMetadata": self._ec2_actions.obtain_instance_metadata,
             "SendNotification": self._ec2_actions.send_notification,
@@ -41,7 +41,12 @@ class Engine:
         logger.info("Nimbulite Engine initialized successfully.")
 
     def _find_playbook_for_finding(self, finding_event: dict):
-        """Looks up the appropriate playbook name for a given finding."""
+        """
+        Looks up the appropriate playbook name for a given finding.
+        
+        Args:
+            finding_event: Dictionary of event data from GuardDuty event.
+        """
         finding_type = finding_event.get("Type")
         if not finding_type:
             logger.warning("Finding event is missing a 'Type' field.")
@@ -72,6 +77,9 @@ class Engine:
     def process_finding(self, finding_event: dict):
         """
         Processes a single GuardDuty finding event and executes the appropriate playbook.
+
+        Args:
+            finding_event: Dictionary of event data from GuardDuty event.
         """
         finding_id = finding_event.get("Id")
         finding_type = finding_event.get("Type")

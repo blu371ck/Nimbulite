@@ -2,9 +2,21 @@ import logging
 from typing import Optional
 
 import boto3
+import json
 from boto3.session import Session
 
 logger = logging.getLogger(__name__)
+
+DENY_ALL_POLICY_DOCUMENT = json.dumps({
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Deny",
+            "Action": "*",
+            "Resource": "*"
+        }
+    ]
+})
 
 
 class EC2Actions:
@@ -57,10 +69,17 @@ class EC2Actions:
             return False
 
     @staticmethod
-    def isolate_instance(session, finding_event: dict, params: dict) -> bool:
+    def isolate_instance(session, finding_event: dict, params: Optional[dict]) -> bool:
         """
         Isolates an EC2 instance by replacing its security group with a single, restrictive one.
         Requires 'isolation_security_group_id' in the playbook step's 'with' block.
+        
+        Args:
+            session: Boto3 Session to build clients with.
+            finding_event: Dictionary passed from GuardDuty event.
+            params: Dictionary of key/value parameters. (Optional)
+        Returns:
+            True/False based on completion of assigned task.
         """
         logger.info("Executing action: IsolateInstance")
 
@@ -98,19 +117,51 @@ class EC2Actions:
         except Exception as e:
             logger.error(f"An error occurred while isolating instance: {e}")
             return False
+        
+
+    @staticmethod
+    def invalidate_iam_role_credentials(session, finding_event: dict, params: Optional[dict]) -> bool:
+        """
+        Invalidates the temporary credentials of a compromised EC2 instance by attaching
+        a 'deny all' policy to its IAM role.
+
+        Args:
+            session: Boto3 Session to build clients with.
+            finding_event: Dictionary passed from GuardDuty event.
+            params: Dictionary of key/value parameters. (Optional)
+        Returns:
+            True/False based on completion of assigned task.
+        """
+        logger.info("Executing action: RevokeIamCredentials")
+
+        try:
+            iam_instance_profile = finding_event.get("Resource", {}).get("InstanceDetails", {}).get("IamInstanceProfile", {}).get("Arn")
+            if not iam_instance_profile:
+                logger.error("Could not find an IamInstanceProfile ARN in the finding event.")    
+                return False
+            
+            role_name = iam_instance_profile.split("/")[-1]
+            logger.info(f"Found IAM role to invalidate: {role_name}")
+
+            iam = session.client("iam")
+            policy_name = f"Nimbulite-Quarantine-{finding_event.get('Id')}"
+            logger.info(f"Creating and attaching deny-all policy '{policy_name}' to role '{role_name}'...")
+
+            iam.put_role_policy(
+                RoleName=role_name,
+                PolicyName=policy_name,
+                PolicyDocument=DENY_ALL_POLICY_DOCUMENT
+            )
+
+            logger.info(f"Successfully attached eny-all policy to role '{role_name}'. Credentials are now invalid.")
+            return True
+
+        except Exception as e:
+            logger.error(f"An error occurred while invalidating IAM role credentials: {e}")
+            return False
+
 
     # --- Placeholder functions for other actions ---
-
-    @staticmethod
-    def revoke_iam_credentials(session, finding_event: dict, params: dict) -> bool:
-        logger.info("Executing action: RevokeIamCredentials (Not Yet Implemented)")
-        return True
-
-    @staticmethod
-    def revoke_iam_sessions(session, finding_event: dict, params: dict) -> bool:
-        logger.info("Executing action: RevokeIanSessions (Not Yet Implemented)")
-        return True
-
     @staticmethod
     def create_snapshots(session, finding_event: dict, params: dict) -> bool:
         logger.info("Executing action: CreateSnapshots (Not Yet Implemented)")
